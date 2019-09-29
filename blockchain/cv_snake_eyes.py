@@ -7,7 +7,7 @@ pygame.init()
 current_path = os.path.dirname(r"C:\Users\boomb\Desktop\work\python\bitcoin_notification\blockchain\cv_snake_eyes.py")
 resource_path = os.path.join(current_path, "rashodniki")
 image_path = os.path.join(resource_path, "Objects")
-char_image_path = os.path.join(resource_path, "yasha")
+char_image_path = os.path.join(resource_path, "charachters")
 
 
 
@@ -45,8 +45,7 @@ stone_image = [pygame.image.load(os.path.join(image_path, 'Stone0.png')),
 cloud_image = [pygame.image.load(os.path.join(image_path, 'Cloud0.png')),
                pygame.image.load(os.path.join(image_path, 'Cloud1.png'))]
 
-yasha_image = [pygame.image.load(os.path.join(char_image_path, 'yashaSprites1.png')),
-              pygame.image.load(os.path.join(char_image_path, 'yasha1.png')),
+yasha_image = [pygame.image.load(os.path.join(char_image_path, 'yasha1.png')),
               pygame.image.load(os.path.join(char_image_path, 'yasha2.png')),
               pygame.image.load(os.path.join(char_image_path, 'yasha3.png')),
               pygame.image.load(os.path.join(char_image_path, 'yasha4.png')),
@@ -56,7 +55,22 @@ yasha_image = [pygame.image.load(os.path.join(char_image_path, 'yashaSprites1.pn
               pygame.image.load(os.path.join(char_image_path, 'yasha8.png')),
               pygame.image.load(os.path.join(char_image_path, 'yasha9.png')),
               pygame.image.load(os.path.join(char_image_path, 'yasha10.png')),
-              pygame.image.load(os.path.join(char_image_path, 'yasha11.png'))]
+              pygame.image.load(os.path.join(char_image_path, 'yasha11.png')),
+              pygame.image.load(os.path.join(char_image_path, 'yasha12.png'))]
+
+nikich_image = [pygame.image.load(os.path.join(char_image_path, 'Dino0.png')),
+                pygame.image.load(os.path.join(char_image_path, 'Dino1.png')),
+                pygame.image.load(os.path.join(char_image_path, 'Dino2.png')),
+                pygame.image.load(os.path.join(char_image_path, 'Dino3.png')),
+                pygame.image.load(os.path.join(char_image_path, 'Dino4.png')),]
+
+dunis_image = [ pygame.image.load(os.path.join(char_image_path, 'Dino2_0.png')),
+                pygame.image.load(os.path.join(char_image_path, 'Dino2_1.png')),
+                pygame.image.load(os.path.join(char_image_path, 'Dino2_2.png')),
+                pygame.image.load(os.path.join(char_image_path, 'Dino2_3.png')),
+                pygame.image.load(os.path.join(char_image_path, 'Dino2_4.png'))]
+
+chars = [yasha_image, nikich_image, dunis_image]
 
 effect_path = os.path.join(resource_path, 'Effects')
 health_image = pygame.image.load(os.path.join(effect_path, 'heart.png'))
@@ -64,6 +78,7 @@ health_image = pygame.transform.scale(health_image, (30, 30))
 
 img_counter = 0
 health = 3
+num_char = 10
 
 
 class Object:
@@ -96,27 +111,52 @@ class Button:
         self.inactive_color = (238, 130, 238)
         self.active_color = (221, 160, 221)
 
-    def draw(self, x, y, message, action=None, font_size=30):
+    def draw(self, x, y, message = None, action=None, font_size=30, frame=None):
         mouse = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
 
-        if x < mouse[0] < x + self.width and y < mouse[1] < y + self.height:
-            pygame.draw.rect(display,self.active_color, (x, y, self.width, self.height))
-
+        #если есть рамка
+        if frame is not None:
+            if x < mouse[0] < x + self.width and y < mouse[1] < y + self.height:
+                pygame.draw.rect(
+                display,
+                self.active_color,
+                (x, y, self.width, self.height),
+                frame)
             if click[0] == 1 and action is not None:
-                pygame.mixer.Sound.play(button_sound)
-                pygame.time.delay(300)
-                if action == quit:
-                    pygame.quit()
-                    quit()
-                else:
+                    pygame.mixer.Sound.play(button_sound)
+                    pygame.time.delay(300)
+                    if action == quit:
+                        pygame.quit()
+                        quit()
+                    else:
+                        action()
                     action()
-
-                action()
+            else:
+                pygame.draw.rect(
+                    display,
+                    self.inactive_color,
+                    (x,y, self.width, self.height),
+                    frame)
         else:
-            pygame.draw.rect(display, self.inactive_color, (x, y, self.width, self.height))
+        #если нет рамки
+            if x < mouse[0] < x + self.width and y < mouse[1] < y + self.height:
+                pygame.draw.rect(display,self.active_color, (x, y, self.width, self.height))
 
-        print_text(message=message, x=x+10, y=y+10, font_size=font_size)
+                if click[0] == 1 and action is not None:
+                    pygame.mixer.Sound.play(button_sound)
+                    pygame.time.delay(300)
+                    if action == quit:
+                        pygame.quit()
+                        quit()
+                    else:
+                        action()
+
+                    action()
+            else:
+                pygame.draw.rect(display, self.inactive_color, (x, y, self.width, self.height))
+
+            print_text(message=message, x=x+10, y=y+10, font_size=font_size)
 
 #персонаж
 usr_width = 60
@@ -163,9 +203,54 @@ def show_menu():
                 pygame.quit()
                 quit()
 
-        display.blit(menu_background, (0,0))
-        start_button.draw(635,320,'Start game!', start_game, 18)
-        quit_button.draw(650, 380, 'Quit', quit,)
+            display.blit(menu_background, (0,0))
+            start_button.draw(635,320,'Start game!', select_person, 18)
+            quit_button.draw(650, 380, 'Quit', quit)
+
+            pygame.display.update()
+            clock.tick(60)
+
+def select_person():
+    global num_char
+
+    background_path = os.path.join(resource_path, 'Backgrounds')
+    select_background = pygame.image.load(os.path.join(background_path, 'select.jpg'))
+    hero_icon = [pygame.image.load(os.path.join(background_path, "hero1.jpg")),
+                 pygame.image.load(os.path.join(background_path, "hero2.jpg")),
+                 pygame.image.load(os.path.join(background_path, "hero3.jpg"))]
+
+    first_pers = Button(200, 450)
+    second_pers = Button(200, 450)
+    third_pers = Button(200, 450)
+
+    show = True
+
+    while show:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+
+        display.blit(select_background, (0,0))
+
+        keys = pygame.key.get_pressed()
+        one = first_pers.draw(50,75, frame=8)
+        two = second_pers.draw(300,75,frame=8)
+        three = third_pers.draw(550,75, frame=8)
+
+        display.blit(hero_icon[0],(58,83))
+        display.blit(hero_icon[1],(308,83))
+        display.blit(hero_icon[2],(558,83))
+
+        if keys[pygame.K_1]:
+            num_char = 2
+            start_game()
+        if keys[pygame.K_2]:
+            num_char = 0
+            start_game()
+        if keys[pygame.K_3]:
+            num_char = 1
+            start_game()
 
         pygame.display.update()
         clock.tick(60)
@@ -187,7 +272,7 @@ def start_game():
 
 #основа
 def game_loop():
-    global make_jump
+    global make_jump, num_char
 
     game = True
     cactus_arr = []
@@ -201,8 +286,8 @@ def game_loop():
     resource_path = os.path.join(current_path, "rashodniki")
     image_path = os.path.join(resource_path, "Backgrounds")
 
-    lands = ['Land.jpg', 'Land2.jpg', 'LandLevel.jpg']
-    rdm = random.randrange(0,3)
+    lands = ['Land.jpg', 'Land2.jpg', 'LandLevel.jpg', 'neon2.jpg']
+    rdm = random.randrange(0,4)
     land = pygame.image.load(os.path.join(image_path,lands[rdm]))
 
     while game:
@@ -227,9 +312,10 @@ def game_loop():
         print_text('Scores: ' + str(scores), 600, 10)
 
         draw_arr(cactus_arr)
+
         move_objects(stone, cloud)
 
-        draw_dino()
+        draw_dino(num_char)
         heart.move()
         hearts_plus(heart)
 
@@ -304,12 +390,12 @@ def draw_arr(array):
         if not check:
             object_return(array, cactus)
 
-def draw_dino():
+def draw_dino(char):
     global img_counter
     if img_counter == 60:
         img_counter = 0
 
-    display.blit(yasha_image[img_counter // 5], (usr_x, usr_y))
+    display.blit(chars[char][img_counter // 5], (usr_x, usr_y))
     img_counter += 1
 
 
@@ -349,7 +435,7 @@ def move_objects(stone, cloud):
         img_of_cloud = cloud_image[choice]
         cloud.return_object(display_width, random.randrange(10, 200), stone.width, img_of_cloud)
 
-def print_text(message, x, y, font_color = (0, 0, 0), font_size = 30):
+def print_text(message, x, y, font_color = (255, 255, 255), font_size = 30):
     font_type = pygame.font.Font(os.path.join(current_path, 'PingPong.ttf'), font_size)
     text = font_type.render(message, True, font_color)
 
