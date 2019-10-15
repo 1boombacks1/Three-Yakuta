@@ -258,11 +258,6 @@ def select_person():
 def start_game():
     global scores, make_jump, jump_counter, usr_y, health
 
-    #Музыка
-    pygame.mixer.music.load(os.path.join(music_path, 'Big_Slinker.mp3'))
-    pygame.mixer.music.set_volume(0.1)
-    pygame.mixer.music.play(-1)
-
     while game_loop():
         scores = 0
         make_jump = False
@@ -273,6 +268,10 @@ def start_game():
 #основа
 def game_loop():
     global make_jump, num_char
+
+    pygame.mixer.music.load(os.path.join(music_path, 'Big_Slinker.mp3'))
+    pygame.mixer.music.set_volume(0.1)
+    pygame.mixer.music.play(-1)
 
     game = True
     cactus_arr = []
@@ -392,11 +391,16 @@ def draw_arr(array):
 
 def draw_dino(char):
     global img_counter
-    if img_counter == 60:
-        img_counter = 0
-
-    display.blit(chars[char][img_counter // 5], (usr_x, usr_y))
-    img_counter += 1
+    if char == 0:
+        if img_counter == 60:
+            img_counter = 0
+        display.blit(chars[char][img_counter // 5], (usr_x, usr_y))
+        img_counter += 1
+    else:
+        if img_counter == 25:
+            img_counter = 0
+        display.blit(chars[char][img_counter // 5], (usr_x, usr_y))
+        img_counter += 1
 
 
 def object_return(objects, obj):
