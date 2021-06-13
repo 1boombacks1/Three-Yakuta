@@ -4,7 +4,6 @@ import os
 
 pygame.init()
 
-# current_path = os.path.dirname(r"E:\а что опять работа\python\bitcoin_notification\blockchain\cv_snake_eyes.py")
 current_path = os.path.dirname(os.path.abspath("cv_snake_eyes.py"))
 resource_path = os.path.join(current_path, "rashodniki")
 image_path = os.path.join(resource_path, "Objects")
@@ -89,6 +88,7 @@ num_char = 10
 cooldown = 0
 rdm = random.randrange(0,4)
 
+#Класс описивыющий состояние и поведение пуль
 class Bullet:
     def __init__(self, x, y):
         self.x = x
@@ -125,6 +125,7 @@ class Bullet:
         else:
             return False
 
+#Класс описивыющий состояние и поведение энергии и сердечек
 class Object:
     def __init__(self, x, y, width, image, speed):
         self.x = x
@@ -148,6 +149,7 @@ class Object:
         self.image = image
         display.blit(self.image, (self.x, self.y,))
 
+#Класс описивыющий кнопку
 class Button:
     def __init__(self, width, height):
         self.width = width
