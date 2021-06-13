@@ -4,7 +4,8 @@ import os
 
 pygame.init()
 
-current_path = os.path.dirname(r"C:\Users\boomb\Desktop\work\python\bitcoin_notification\blockchain\cv_snake_eyes.py")
+# current_path = os.path.dirname(r"E:\а что опять работа\python\bitcoin_notification\blockchain\cv_snake_eyes.py")
+current_path = os.path.dirname(os.path.abspath("cv_snake_eyes.py"))
 resource_path = os.path.join(current_path, "rashodniki")
 image_path = os.path.join(resource_path, "Objects")
 char_image_path = os.path.join(resource_path, "charachters")
@@ -18,8 +19,6 @@ display_height = 600
 display = pygame.display.set_mode((display_width, display_height))
 pygame.display.set_caption("Three Yakuta")
 
-icon = pygame.image.load(os.path.join(current_path, "icon.png"))
-pygame.display.set_icon(icon)
 
 music_path = os.path.join(resource_path, "Sounds")
 button_sound = pygame.mixer.Sound(os.path.join(music_path, 'button.wav'))
@@ -27,6 +26,7 @@ jump_sound = pygame.mixer.Sound(os.path.join(music_path, '8bit-synth-bounce-shor
 fall_sound = pygame.mixer.Sound(os.path.join(music_path, 'Bdish.wav'))
 loss_sound = pygame.mixer.Sound(os.path.join(music_path, 'loss.wav'))
 heart_plus_sound = pygame.mixer.Sound(os.path.join(music_path, 'hp+.wav'))
+shot_sound = pygame.mixer.Sound(os.path.join(music_path, 'shot.wav'))
 
 jump_sound.set_volume(0.05)
 heart_plus_sound.set_volume(0.1)
@@ -76,10 +76,54 @@ effect_path = os.path.join(resource_path, 'Effects')
 health_image = pygame.image.load(os.path.join(effect_path, 'heart.png'))
 health_image = pygame.transform.scale(health_image, (30, 30))
 
+bullet_image = pygame.image.load(os.path.join(effect_path, 'shot.png'))
+bullet_image = pygame.transform.scale(bullet_image, (30, 10))
+
+energy_image = pygame.image.load(os.path.join(effect_path, 'Ruby.png'))
+energy_image = pygame.transform.scale(energy_image, (30, 30))
+
 img_counter = 0
 health = 3
+mana = 3
 num_char = 10
+cooldown = 0
+rdm = random.randrange(0,4)
 
+class Bullet:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.speed_x = 8
+        self.speed_y = 0
+        self.dest_x = 0
+        self.dest_y = 0
+
+    def move(self):
+        self.x += self.speed_x
+        if self.x < display_width:
+            display.blit(bullet_image, (self.x, self.y))
+            return True
+        else:
+            return False
+
+    def find_path(self, dest_x, dest_y):
+        self.dest_x = dest_x
+        self.dest_y = dest_y
+
+        delta_x = dest_x - self.x
+        count_up = delta_x // self.speed_x
+        delta_y = self.y - dest_y
+        self.speed_y = delta_y / count_up
+
+    def move_to(self):
+        self.x += self.speed_x
+        self.y -= self.speed_y
+
+        if self.x < display_width:
+            display.blit(bullet_image, (self.x, self.y))
+            return True
+        else:
+            return False
 
 class Object:
     def __init__(self, x, y, width, image, speed):
@@ -244,19 +288,36 @@ def select_person():
 
         if keys[pygame.K_1]:
             num_char = 2
-            start_game()
+            char_not_available()
         if keys[pygame.K_2]:
             num_char = 0
             start_game()
         if keys[pygame.K_3]:
             num_char = 1
-            start_game()
+            char_not_available()
 
         pygame.display.update()
         clock.tick(60)
 
+def char_not_available():
+    while 1:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+
+        pygame.draw.rect(display,(0,0,0),(20,295,760,40))
+        print_text("Character not available! Press Enter for countinue!",25, 300,font_color=(16, 188, 227))
+
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_RETURN]:
+            break
+
+        pygame.display.update()
+        clock.tick(15)
+
 def start_game():
-    global scores, make_jump, jump_counter, usr_y, health
+    global scores, make_jump, jump_counter, usr_y, health, cooldown, mana
 
     while game_loop():
         scores = 0
@@ -264,10 +325,12 @@ def start_game():
         jump_counter = 30
         usr_y = display_height - usr_height - 100
         health = 3
+        mana = 3
+        cooldown = 0
 
 #основа
 def game_loop():
-    global make_jump, num_char
+    global make_jump, num_char, cooldown, rdm, mana, resource_path
 
     pygame.mixer.music.load(os.path.join(music_path, 'Big_Slinker.mp3'))
     pygame.mixer.music.set_volume(0.1)
@@ -278,16 +341,17 @@ def game_loop():
     create_cactus_arr(cactus_arr)
 
     heart = Object(display_width, 280, 30, health_image, 4)
+    energy = Object(display_width, 340, 30, energy_image, 4)
 
     stone, cloud = open_random_objects()
 
-    current_path = os.path.dirname(r"C:\Users\boomb\Desktop\work\python\bitcoin_notification\blockchain\cv_snake_eyes.py")
-    resource_path = os.path.join(current_path, "rashodniki")
-    image_path = os.path.join(resource_path, "Backgrounds")
+    backgrounds_path = os.path.join(resource_path, "Backgrounds")
 
     lands = ['Land.jpg', 'Land2.jpg', 'LandLevel.jpg', 'neon2.jpg']
-    rdm = random.randrange(0,4)
-    land = pygame.image.load(os.path.join(image_path,lands[rdm]))
+    land = pygame.image.load(os.path.join(backgrounds_path,lands[rdm]))
+
+    all_button_bullets = []
+    all_mouse_bullets = []
 
     while game:
         for event in pygame.event.get():
@@ -296,18 +360,19 @@ def game_loop():
                 quit()
 
         keys = pygame.key.get_pressed()
+        mouse = pygame.mouse.get_pos()
+        click = pygame.mouse.get_pressed()
+
         if keys[pygame.K_SPACE]:
             make_jump = True
         if keys[pygame.K_ESCAPE]:
             pause()
-
         if make_jump:
             jump()
 
         count_scores(cactus_arr)
 
         display.blit(land, (0, 0))
-
         print_text('Scores: ' + str(scores), 600, 10)
 
         draw_arr(cactus_arr)
@@ -318,11 +383,48 @@ def game_loop():
         heart.move()
         hearts_plus(heart)
 
+
         if check_collision(cactus_arr):
             pygame.mixer.music.stop()
             game = False
 
+        if num_char == 1:
+            energy.move()
+            energy_plus(energy)
+            if mana != 0:
+                if not cooldown:
+                    if keys[pygame.K_x]:
+                        all_button_bullets.append(Bullet(usr_x+usr_width, usr_y + 28))
+                        cooldown = 50
+                        pygame.mixer.Sound.play(shot_sound)
+                    elif click[0]:
+                        add_bullet = Bullet(usr_x+usr_width, usr_y + 28)
+                        add_bullet.find_path(mouse[0], mouse[1])
+
+                        all_mouse_bullets.append(add_bullet)
+                        cooldown = 50
+                        pygame.mixer.Sound.play(shot_sound)
+                else:
+                    print_text("Cooldown time: " + str(cooldown // 10), 482, 40)
+                    cooldown -= 1
+            else:
+                print_text("NO ENERGY!", 602, 40)
+
+            for bullet in all_button_bullets:
+                if not bullet.move():
+                    mana -= 1
+                    all_button_bullets.remove(bullet)
+
+
+            for bullet in all_mouse_bullets:
+                if not bullet.move_to():
+                    mana -= 1
+                    all_mouse_bullets.remove(bullet)
+
+            show_energy()
+
         show_health()
+
 
         pygame.display.update()
         clock.tick(80)
@@ -440,6 +542,9 @@ def move_objects(stone, cloud):
         cloud.return_object(display_width, random.randrange(10, 200), stone.width, img_of_cloud)
 
 def print_text(message, x, y, font_color = (255, 255, 255), font_size = 30):
+    global rdm
+    if rdm == 0:
+        font_color = (0,0,0)
     font_type = pygame.font.Font(os.path.join(current_path, 'PingPong.ttf'), font_size)
     text = font_type.render(message, True, font_color)
 
@@ -455,7 +560,6 @@ def pause():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
-
         print_text("Paused. Press enter to continue.", 160, 300)
 
         keys = pygame.key.get_pressed()
@@ -556,6 +660,15 @@ def show_health():
         x += 40
         show += 1
 
+def show_energy():
+    global mana
+    show = 0
+    x = 20
+    while show != mana:
+        display.blit(energy_image, (x, 60))
+        x += 40
+        show += 1
+
 def cheak_health():
     global health
     health -= 1
@@ -583,6 +696,24 @@ def hearts_plus(heart):
             radius = display_width + random.randrange(2000, 5000)
             new_height = display_height - 200 - random.randrange(-75, 200)
             heart.return_object(radius, new_height, heart.width, heart.image)
+
+def energy_plus(energy):
+    global mana, usr_x, usr_y, usr_width, usr_height
+
+    if energy.x <= -energy.width:
+        radius = display_width + random.randrange(1000,3000)
+        new_height = display_height - 200 - random.randrange(-75, 200)
+        energy.return_object(radius, new_height, energy.width, energy.image)
+
+    if usr_x <= energy.x <= usr_x + usr_width:
+        if usr_y <= energy.y <= usr_y + usr_height:
+            pygame.mixer.Sound.play(heart_plus_sound)
+            if mana < 3:
+                mana += 1
+
+            radius = display_width + random.randrange(1000,3000)
+            new_height = display_height - 200 - random.randrange(-75, 200)
+            energy.return_object(radius, new_height, energy.width, energy.image)
 
 def game_over():
     global scores, max_scores
